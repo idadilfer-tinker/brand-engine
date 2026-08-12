@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brand Engine — Live Example</title>
+<style>
+  :root{
+    --surface-base:#0B0A08;
+    --surface-raised:#141210;
+    --signal-primary:#FF5B1F;
+    --signal-deep:#B8320A;
+    --signal-dim:#7A280F;
+    --text-primary:#F5F1EA;
+    --text-muted:#9A9186;
+    --blur-base:40px;
+    --shadow-color:rgba(255,91,31,0.35);
+    --grain-opacity:0.06;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+    --duration:600ms;
+    --parallax-max:18px;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html,body{
+    background:var(--surface-base);
+    color:var(--text-primary);
+    font-family:-apple-system, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:50;
+    opacity:var(--grain-opacity); mix-blend-mode:overlay;
+  }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:64px 32px 96px;
+  }
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    border-bottom:1px solid rgba(245,241,234,0.12);
+    padding-bottom:28px;
+    margin-bottom:56px;
+    flex-wrap:wrap;
+  }
+
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--signal-primary);
+    font-weight:600;
+    margin-bottom:14px;
+  }
+
+  h1{
+    font-size:clamp(32px, 5vw, 52px);
+    line-height:1.05;
+    letter-spacing:-0.02em;
+    font-weight:600;
+    max-width:640px;
+  }
+
+  .lede{
+    max-width:320px;
+    font-size:14px;
+    line-height:1.55;
+    color:var(--text-muted);
+  }
+
+  .stage-grid{
+    display:grid;
+    grid-template-columns:1fr 300px;
+    gap:32px;
+    align-items:start;
+  }
+
+  @media (max-width:860px){
+    .stage-grid{ grid-template-columns:1fr; }
+  }
+
+  .stage{
+    position:relative;
+    height:460px;
+    border:1px solid rgba(245,241,234,0.1);
+    background:
+      linear-gradient(180deg, var(--surface-raised) 0%, var(--surface-base) 100%);
+    overflow:hidden;
+  }
+
+  .stage-label{
+    position:absolute;
+    top:16px; left:20px;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    z-index:5;
+  }
+
+  .stage svg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+  }
+
+  #arcShape, #facetShape{
+    transition:transform var(--duration) var(--ease), opacity 400ms var(--ease);
+    filter:drop-shadow(0 24px var(--blur-base) var(--shadow-color));
+  }
+
+  .panel{
+    background:var(--surface-raised);
+    border:1px solid rgba(245,241,234,0.1);
+    padding:24px;
+  }
+
+  .panel h2{
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin-bottom:20px;
+    font-weight:600;
+  }
+
+  .control{
+    margin-bottom:22px;
+  }
+
+  .control label{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--text-primary);
+    margin-bottom:8px;
+  }
+
+  .control label span.val{
+    color:var(--signal-primary);
+    font-variant-numeric:tabular-nums;
+  }
+
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:2px;
+    background:rgba(245,241,234,0.2);
+    outline:none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:12px; height:12px;
+    border-radius:50%;
+    background:var(--signal-primary);
+    cursor:pointer;
+    border:2px solid var(--surface-base);
+  }
+
+  .mode-row{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+
+  .mode-btn{
+    flex:1;
+    min-width:70px;
+    background:transparent;
+    border:1px solid rgba(245,241,234,0.2);
+    color:var(--text-muted);
+    font-size:11px;
+    letter-spacing:0.04em;
+    padding:9px 6px;
+    cursor:pointer;
+    transition:all 200ms var(--ease);
+    font-family:inherit;
+  }
+
+  .mode-btn.active{
+    border-color:var(--signal-primary);
+    color:var(--signal-primary);
+  }
+
+  .readout{
+    margin-top:56px;
+    border:1px solid rgba(245,241,234,0.1);
+    background:var(--surface-raised);
+    padding:20px 24px;
+  }
+
+  .readout h2{
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin-bottom:14px;
+    font-weight:600;
+  }
+
+  pre{
+    font-family:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size:12px;
+    line-height:1.7;
+    color:var(--text-muted);
+    overflow-x:auto;
+  }
+
+  pre .k{ color:var(--text-primary); }
+  pre .v{ color:var(--signal-primary); }
+
+  .rule-note{
+    margin-top:56px;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:1px;
+    background:rgba(245,241,234,0.1);
+    border:1px solid rgba(245,241,234,0.1);
+  }
+
+  @media (max-width:760px){
+    .rule-note{ grid-template-columns:1fr; }
+  }
+
+  .rule-note div{
+    background:var(--surface-base);
+    padding:22px;
+  }
+
+  .rule-note .num{
+    font-size:11px;
+    color:var(--signal-primary);
+    letter-spacing:0.1em;
+    margin-bottom:10px;
+  }
+
+  .rule-note p{
+    font-size:13px;
+    line-height:1.6;
+    color:var(--text-muted);
+  }
+
+  footer{
+    margin-top:56px;
+    font-size:12px;
+    color:var(--text-muted);
+    border-top:1px solid rgba(245,241,234,0.12);
+    padding-top:24px;
+  }
+
+  footer a{ color:var(--text-primary); }
+</style>
+</head>
+<body>
+
+<svg class="grain" width="0" height="0">
+  <filter id="noiseFilter">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+</svg>
+<div class="grain" style="filter:url(#noiseFilter); background:#000;"></div>
+
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Brand Engine — Live Example</div>
+      <h1>Two primitives.<br>One shared DNA.</h1>
+    </div>
+    <p class="lede">Arc and Facet are two unrelated shapes. Every value that makes them feel like one system — color, depth, grain, motion, axis — comes from <code>tokens.json</code>, not from either shape individually. Move the controls; both primitives respond together.</p>
+  </header>
+
+  <div class="stage-grid">
+    <div class="stage" id="stage">
+      <div class="stage-label">Composition</div>
+      <svg viewBox="0 0 800 460" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="signalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FF5B1F"/>
+            <stop offset="100%" stop-color="#B8320A"/>
+          </linearGradient>
+        </defs>
+        <path id="arcShape" d="M 60 340 C 200 60, 480 60, 740 220" fill="none" stroke="url(#signalGrad)" stroke-width="34" stroke-linecap="round"/>
+        <polygon id="facetShape" points="560,120 720,180 660,340 500,300" fill="url(#signalGrad)"/>
+      </svg>
+    </div>
+
+    <div class="panel">
+      <h2>Composition</h2>
+      <div class="control">
+        <div class="mode-row">
+          <button class="mode-btn active" data-mode="both">Both</button>
+          <button class="mode-btn" data-mode="arc">Arc</button>
+          <button class="mode-btn" data-mode="facet">Facet</button>
+        </div>
+      </div>
+
+      <h2 style="margin-top:32px;">Shared tokens</h2>
+
+      <div class="control">
+        <label>Depth <span class="val" id="depthVal">40px</span></label>
+        <input type="range" id="depth" min="8" max="80" value="40">
+      </div>
+
+      <div class="control">
+        <label>Warmth <span class="val" id="warmthVal">0°</span></label>
+        <input type="range" id="warmth" min="-40" max="40" value="0">
+      </div>
+
+      <div class="control">
+        <label>Motion <span class="val" id="motionVal">18px</span></label>
+        <input type="range" id="motion" min="0" max="40" value="18">
+      </div>
+    </div>
+  </div>
+
+  <div class="readout">
+    <h2>Token readout</h2>
+    <pre id="tokenReadout"></pre>
+  </div>
+
+  <div class="rule-note">
+    <div>
+      <div class="num">01</div>
+      <p>Signal color applies to only one primitive at a time when both are shown together — never an equal split. That's a written combination rule, not a stylistic accident.</p>
+    </div>
+    <div>
+      <div class="num">02</div>
+      <p>Depth, grain, and motion tokens are mandatory on every primitive instance. Turn "Depth" to zero and both shapes go flat together — because they read from one value, not two.</p>
+    </div>
+    <div>
+      <div class="num">03</div>
+      <p>This is the layer most brand kits stop at: a documented rule. A Brand Engine also ships this rule set as an operable skill — see <code>/skills/brand-engine-generator</code>.</p>
+    </div>
+  </div>
+
+  <footer>
+    Template file — swap the values in <code>tokens.json</code> and the primitives in this page for a real client engine. Part of the Brand Engine repo: see <code>../README.md</code>.
+  </footer>
+
+</div>
+
+<script>
+  const stage = document.getElementById('stage');
+  const arc = document.getElementById('arcShape');
+  const facet = document.getElementById('facetShape');
+  const depthInput = document.getElementById('depth');
+  const warmthInput = document.getElementById('warmth');
+  const motionInput = document.getElementById('motion');
+  const depthVal = document.getElementById('depthVal');
+  const warmthVal = document.getElementById('warmthVal');
+  const motionVal = document.getElementById('motionVal');
+  const tokenReadout = document.getElementById('tokenReadout');
+  const modeButtons = document.querySelectorAll('.mode-btn');
+
+  let state = { depth: 40, warmth: 0, motion: 18, mode: 'both' };
+  let pointer = { x: 0.5, y: 0.5 };
+
+  function renderTokens(){
+    tokenReadout.innerHTML =
+`<span class="k">material.depth.blurBase</span>: <span class="v">${state.depth}px</span>
+<span class="k">color.hueRotate</span>: <span class="v">${state.warmth}deg</span>
+<span class="k">motion.parallaxMax</span>: <span class="v">${state.motion}px</span>
+<span class="k">composition.mode</span>: <span class="v">"${state.mode}"</span>
+<span class="k">combination_rule</span>: <span class="v">"signal.primary applied to 1 primitive max"</span>`;
+  }
+
+  function applyState(){
+    document.documentElement.style.setProperty('--blur-base', state.depth + 'px');
+    document.documentElement.style.setProperty('--parallax-max', state.motion + 'px');
+    stage.style.filter = `hue-rotate(${state.warmth}deg)`;
+
+    depthVal.textContent = state.depth + 'px';
+    warmthVal.textContent = state.warmth + '°';
+    motionVal.textContent = state.motion + 'px';
+
+    arc.style.opacity = (state.mode === 'facet') ? 0 : 1;
+    facet.style.opacity = (state.mode === 'arc') ? 0 : 1;
+
+    renderTokens();
+  }
+
+  function applyParallax(){
+    const dx = (pointer.x - 0.5) * state.motion;
+    const dy = (pointer.y - 0.5) * state.motion;
+    arc.style.transform = `translate(${dx * 0.6}px, ${dy * 0.6}px)`;
+    facet.style.transform = `translate(${-dx}px, ${-dy}px)`;
+  }
+
+  depthInput.addEventListener('input', e => { state.depth = +e.target.value; applyState(); });
+  warmthInput.addEventListener('input', e => { state.warmth = +e.target.value; applyState(); });
+  motionInput.addEventListener('input', e => { state.motion = +e.target.value; applyState(); applyParallax(); });
+
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.mode = btn.dataset.mode;
+      applyState();
+    });
+  });
+
+  stage.addEventListener('mousemove', e => {
+    const rect = stage.getBoundingClientRect();
+    pointer.x = (e.clientX - rect.left) / rect.width;
+    pointer.y = (e.clientY - rect.top) / rect.height;
+    applyParallax();
+  });
+
+  stage.addEventListener('mouseleave', () => {
+    pointer = { x: 0.5, y: 0.5 };
+    applyParallax();
+  });
+
+  applyState();
+  applyParallax();
+</script>
+
+</body>
+</html>
